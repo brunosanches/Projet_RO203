@@ -21,10 +21,64 @@ function readInputFile(inputFile::String)
     # For each line of the input file
     parse_inverted(x, type) = parse(type, x)
     data = map(x -> parse_inverted.(x, Int64), split.(data, ","))
-    return data
+    return permutedims(hcat(data...))
 end
 
+function displayGrid(limits::Array{Int64, 2})
+    n, m = size(A)
+    digits = Int64(ceil(log10(size(A,2))))
+    print(lpad(" |", digits+2, " "))
+    for j in 1:m
+        print(lpad(limits[1, j], digits+1, " "))
+    end
+    println(" |")
+    println(repeat("-", m*2 + 5 + 2*digits))
 
+    for i in 1:n
+        print(lpad(limits[4, i], digits, " "))
+        print(" |")
+        for j in 1:m
+            print(lpad(" ", digits+1, " "))
+        end
+        print(" | ")
+        println(lpad(limits[2,i], digits, " "))
+    end
+
+    println(repeat("-", m*2 + 5 + 2*digits))
+    print(lpad(" |", digits+2, " "))
+    for j in 1:m
+        print(lpad(limits[3, j], digits+1, " "))
+    end
+    println(" |")
+end
+
+function displaySolution(limits::Array{Int64, 2}, solution::Array{Int64, 2})
+    n, m = size(A)
+    digits = Int64(ceil(log10(size(A,2))))
+    print(lpad(" |", digits+2, " "))
+    for j in 1:m
+        print(lpad(limits[1, j], digits+1, " "))
+    end
+    println(" |")
+    println(repeat("-", m*2 + 5 + 2*digits))
+
+    for i in 1:m
+        print(lpad(limits[4, i], digits, " "))
+        print(" |")
+        for j in 1:m
+            print(lpad(solution[i,j], digits+1, " "))
+        end
+        print(" | ")
+        println(lpad(limits[2,i], digits, " "))
+    end
+
+    println(repeat("-", m*2 + 5 + 2*digits))
+    print(lpad(" |", digits+2, " "))
+    for j in 1:m
+        print(lpad(limits[3, j], digits+1, " "))
+    end
+    println(" |")
+end
 """
 Create a pdf file which contains a performance diagram associated to the results of the ../res folder
 Display one curve for each subfolder of the ../res folder.
