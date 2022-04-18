@@ -19,13 +19,9 @@ function readInputFile(inputFile::String)
     close(datafile)
 
     # For each line of the input file
-    for line in data
-
-        # TODO
-        println("In file io.jl, in method readInputFile(), TODO: read a line of the input file")
-
-    end
-
+    parse_inverted(x, type) = parse(type, x)
+    data = map(x -> parse_inverted.(x, Int64), split.(data, ","))
+    return data
 end
 
 
