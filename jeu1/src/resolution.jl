@@ -14,21 +14,19 @@ function cplexSolve(limits::Array{Int64,2})
     # Create the model
     m = Model(with_optimizer(CPLEX.Optimizer))
 
-    # TODO
-    println("In file resolution.jl, in method cplexSolve(), TODO: fix input and output, define the model")
     n = size(limits,2)
-    half_n = Int64(floor(n/2))
+
     #Defining variables
-    @variable(m, x[1:n, 1:n, 1:n], Bin) #Variable 1 si case i,j = k 0 sinon
-    @variable(m, v[1:n, 1:n, 1:4], Bin) #Variable 1 si case i,j est visible en visant de k
-    @variable(m, g_l[1:n, 1:n, 1:n], Bin) # 1 si case est plus grande qu'autre dans la meme ligne
-    @variable(m, g_c[1:n, 1:n, 1:n], Bin) # 1 si case est plus grande qu'autre dans la meme colonne
-    @variable(m, case[1:n, 1:n] >= 0, Int)
+    @variable(m, x[1:n, 1:n, 1:n], Bin) # Variable 1 si tour i,j = k 0 sinon
+    @variable(m, v[1:n, 1:n, 1:4], Bin) # Variable 1 si tour i,j est visible en visant de k
+    @variable(m, g_l[1:n, 1:n, 1:n], Bin) # 1 si tour est plus grande qu'autre dans la meme ligne
+    @variable(m, g_c[1:n, 1:n, 1:n], Bin) # 1 si tour est plus grande qu'autre dans la meme colonne
+    @variable(m, tour[1:n, 1:n] >= 0, Int) # valeur d'hauteur de la tour
 
     #Defining contraints
-    @constraint(m, [i in 1:n, j in 1:n], sum(x[i,j,k] for k in 1:n)==1) #1 valeur par case
-    @constraint(m, [i in 1:n, k in 1:n], sum(x[i,j,k] for j in 1:n)==1) #1 valeur par ligne
-    @constraint(m, [j in 1:n, k in 1:n], sum(x[i,j,k] for i in 1:n)==1) #1 valeur par colonne
+    @constraint(m, [i in 1:n, j in 1:n], sum(x[i,j,k] for k in 1:n)==1) # 1 valeur par tour
+    @constraint(m, [i in 1:n, k in 1:n], sum(x[i,j,k] for j in 1:n)==1) # 1 valeur par ligne
+    @constraint(m, [j in 1:n, k in 1:n], sum(x[i,j,k] for i in 1:n)==1) # 1 valeur par colonne
 
     ## Constraintes de visualisation (combien de tours je peux voir)
     @constraint(m, [k in [1,3], j in 1:n], sum(v[i,j,k] for i in 1:n)==limits[k,j])
@@ -43,15 +41,15 @@ function cplexSolve(limits::Array{Int64,2})
     ## Si tour a n de hauteur, visible après toutes les perspectives
     @constraint(m, [i in 1:n, j in 1:n, k in 1:4], v[i,j,k] >= x[i,j,n])
 
-    ## Prendre le valeur de la case
-    @constraint(m, [i in 1:n, j in 1:n], sum(k*x[i, j, k] for k in 1:n) == case[i,j])
+    ## Prendre le valeur de la tour
+    @constraint(m, [i in 1:n, j in 1:n], sum(k*x[i, j, k] for k in 1:n) == tour[i,j])
 
     ## Impose les bonnes valeurs pour les variables g_l et g_c
-    @constraint(m, [i in 1:n, j in 1:n, j2 in 1:n], case[i, j2] - case[i,j] <= (1-g_l[i,j,j2])*n)
-    @constraint(m, [i in 1:n, j in 1:n, j2 in 1:n], case[i, j2] - case[i,j] >= -g_l[i,j,j2]*n)
+    @constraint(m, [i in 1:n, j in 1:n, j2 in 1:n], tour[i, j2] - tour[i,j] <= (1-g_l[i,j,j2])*n)
+    @constraint(m, [i in 1:n, j in 1:n, j2 in 1:n], tour[i, j2] - tour[i,j] >= -g_l[i,j,j2]*n)
 
-    @constraint(m, [i in 1:n, j in 1:n, i2 in 1:n], case[i2, j] - case[i,j] <= (1-g_c[i,j,i2])*n)
-    @constraint(m, [i in 1:n, j in 1:n, i2 in 1:n], case[i2, j] - case[i,j] >= -g_c[i,j,i2]*n)
+    @constraint(m, [i in 1:n, j in 1:n, i2 in 1:n], tour[i2, j] - tour[i,j] <= (1-g_c[i,j,i2])*n)
+    @constraint(m, [i in 1:n, j in 1:n, i2 in 1:n], tour[i2, j] - tour[i,j] >= -g_c[i,j,i2]*n)
 
     # Perspective 1
     @constraint(m, [i in 2:n, j in 1:n], sum(g_c[i, j, i2] for i2 in 1:(i-1)) >= (i-1)*v[i,j,1])
@@ -69,7 +67,7 @@ function cplexSolve(limits::Array{Int64,2})
     @constraint(m, [i in 1:n, j in 2:n], sum(g_l[i, j, j2] for j2 in 1:(j-1)) >= (j-1)*v[i,j,4])
     @constraint(m, [i in 1:n, j in 2:n], sum(g_l[i, j, j2] for j2 in 1:(j-1)) <= j-2 + v[i,j,4])
 
-    @objective(m, Max, case[1,1])
+    @objective(m, Max, tour[1,1])
     # Start a chronometer
     start = time()
 
@@ -78,13 +76,13 @@ function cplexSolve(limits::Array{Int64,2})
 
 
     if JuMP.primal_status(m) == JuMP.MathOptInterface.FEASIBLE_POINT
-        vCase = Array{Int64}(JuMP.value.(case))
-        displaySolution(limits, vCase)
+        vtour = Array{Int64}(JuMP.value.(tour))
+        displaySolution(limits, vtour)
     end
     # Return:
     # 1 - true if an optimum is found
     # 2 - the resolution time
-    return JuMP.primal_status(m) == JuMP.MathOptInterface.FEASIBLE_POINT, time() - start, vCase
+    return JuMP.primal_status(m) == JuMP.MathOptInterface.FEASIBLE_POINT, time() - start, vtour
     
 end
 
