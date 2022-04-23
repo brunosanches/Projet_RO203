@@ -21,6 +21,8 @@ function cplexSolve(limits::Array{Int64,2})
     #Defining variables
     @variable(m, x[1:n, 1:n, 1:n], Bin) #Variable 1 si case i,j = k 0 sinon
     @variable(m, v[1:n, 1:n, 1:4], Bin) #Variable 1 si case i,j est visible en visant de k
+    @variable(m, g_l[1:n, 1:n, 1:n], Bin) # 1 si case est plus grande qu'autre dans la meme ligne
+    @variable(m, g_c[1:n, 1:n, 1:n], Bin) # 1 si case est plus grande qu'autre dans la meme colonne
     @variable(m, case[1:n, 1:n] >= 0, Int)
 
     #Defining contraints
@@ -71,16 +73,38 @@ function cplexSolve(limits::Array{Int64,2})
         #sum(x[i,j2,k2] for j2 in 1:(j-1) for k2 in (k+1):n) + v[i,j,4] <= 2)
 
     # Perspective 1
-    @constraint(m, [i in 2:n, i2 in 1:(i-1), j in 1:n], case[i2, j] - case[i, j] <= (1 - v[i,j,1])*n)
+    #@constraint(m, [i in 2:n, i2 in 1:(i-1), j in 1:n], case[i2, j] - case[i, j] <= (1 - v[i,j,1])*n)
 
     #Perspective 2
-    @constraint(m, [i in 1:n, j in 1:(n-1), j2 in (j+1):n], case[i, j2] - case[i, j] <= (1 - v[i,j,2])*n)
+    #@constraint(m, [i in 1:n, j in 1:(n-1), j2 in (j+1):n], case[i, j2] - case[i, j] <= (1 - v[i,j,2])*n)
 
     #Perspective 3
-    @constraint(m, [i in 1:(n-1), i2 in (i+1):n, j in 1:n], case[i2, j] - case[i, j] <= (1 - v[i,j,3])*n)
+    #@constraint(m, [i in 1:(n-1), i2 in (i+1):n, j in 1:n], case[i2, j] - case[i, j] <= (1 - v[i,j,3])*n)
 
     #Perspective 4
-    @constraint(m, [i in 1:n, j in 2:n, j2 in 1:(j-1)], case[i, j2] - case[i,j] <= (1 - v[i,j,4])*n)
+    #@constraint(m, [i in 1:n, j in 2:n, j2 in 1:(j-1)], case[i, j2] - case[i,j] <= (1 - v[i,j,4])*n)
+
+    @constraint(m, [i in 1:n, j in 1:n, j2 in 1:n], case[i, j2] - case[i,j] <= (1-g_l[i,j,j2])*n)
+    @constraint(m, [i in 1:n, j in 1:n, j2 in 1:n], case[i, j2] - case[i,j] >= -g_l[i,j,j2]*n)
+
+    @constraint(m, [i in 1:n, j in 1:n, i2 in 1:n], case[i2, j] - case[i,j] <= (1-g_c[i,j,i2])*n)
+    @constraint(m, [i in 1:n, j in 1:n, i2 in 1:n], case[i2, j] - case[i,j] >= -g_c[i,j,i2]*n)
+
+    # Perspective 1
+    @constraint(m, [i in 2:n, j in 1:n], sum(g_c[i, j, i2] for i2 in 1:(i-1)) >= (i-1)*v[i,j,1])
+    @constraint(m, [i in 2:n, j in 1:n], sum(g_c[i, j, i2] for i2 in 1:(i-1)) <= i-2 + v[i,j,1])
+
+    # Perspective 2
+    @constraint(m, [i in 1:n, j in 1:(n-1)], sum(g_l[i, j, j2] for j2 in (j+1):n) >= (n-j)*v[i,j,2])
+    @constraint(m, [i in 1:n, j in 1:(n-1)], sum(g_l[i, j, j2] for j2 in (j+1):n) <= (n-j)-1 + v[i,j,2])
+
+    # Perspective 3
+    @constraint(m, [i in 1:(n-1), j in 1:n], sum(g_c[i, j, i2] for i2 in (i+1):n) >= (n-i)*v[i,j,3])
+    @constraint(m, [i in 1:(n-1), j in 1:n], sum(g_c[i, j, i2] for i2 in (i+1):n) <= (n-i)-1 + v[i,j,3])
+
+    # Perspective 4
+    @constraint(m, [i in 1:n, j in 2:n], sum(g_l[i, j, j2] for j2 in 1:(j-1)) >= (j-1)*v[i,j,4])
+    @constraint(m, [i in 1:n, j in 2:n], sum(g_l[i, j, j2] for j2 in 1:(j-1)) <= j-2 + v[i,j,4])
 
     @objective(m, Max, case[1,1])
     # Start a chronometer
@@ -93,13 +117,11 @@ function cplexSolve(limits::Array{Int64,2})
     if JuMP.primal_status(m) == JuMP.MathOptInterface.FEASIBLE_POINT
         vCase = Array{Int64}(JuMP.value.(case))
         displaySolution(limits, vCase)
-        vV = Array{Int64}(JuMP.value.(v))
-        print([vV[i, :, 1] for i in 1:n])
     end
     # Return:
     # 1 - true if an optimum is found
     # 2 - the resolution time
-    return JuMP.primal_status(m) == JuMP.MathOptInterface.FEASIBLE_POINT, time() - start
+    return JuMP.primal_status(m) == JuMP.MathOptInterface.FEASIBLE_POINT, time() - start, vCase
     
 end
 
