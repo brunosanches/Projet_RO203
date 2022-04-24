@@ -102,5 +102,31 @@ function generateDataSet()
 
     # TODO
     println("In file generation.jl, in method generateDataSet(), TODO: generate an instance")
+    quantity_per_size = 5
+    sizes = [5, 10, 15, 20]
+    for n in sizes
+        size_instances = zeros(Int64, quantity_per_size, 4, n)
+        for i in 1:quantity_per_size
+            filepath = "../data/instance_t" * string(n) * "_i" * string(i) * ".txt"
+            if !isfile(filepath)
+                instance = generateInstance(n)
+                while any([instance == x for x in size_instances])
+                    instance = generateInstance(n)
+                end
+
+                size_instances[i, :, :] = instance
+
+                file = open(filepath, "w")
+                for lin in 1:4
+                    for col in 1:(n-1)
+                        print(file, string(instance[lin,col]) * ",")
+                    end
+                    println(file, instance[lin,n])
+                end
+                close(file)
+            end
+
+        end
+    end
     
 end
