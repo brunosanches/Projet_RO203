@@ -100,7 +100,7 @@ Remark: a grid is generated only if the corresponding output file does not alrea
 """
 function generateDataSet()
     quantity_per_size = 5
-    sizes = [3, 5, 7, 9, 11, 13]
+    sizes = [3, 5, 7, 9, 11]
     for n in sizes
         size_instances = zeros(Int64, quantity_per_size, 4, n)
         for i in 1:quantity_per_size
