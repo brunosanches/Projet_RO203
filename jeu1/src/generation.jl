@@ -99,11 +99,8 @@ Generate all the instances
 Remark: a grid is generated only if the corresponding output file does not already exist
 """
 function generateDataSet()
-
-    # TODO
-    println("In file generation.jl, in method generateDataSet(), TODO: generate an instance")
     quantity_per_size = 5
-    sizes = [5, 10, 15, 20]
+    sizes = [3, 5, 7, 9, 11, 13]
     for n in sizes
         size_instances = zeros(Int64, quantity_per_size, 4, n)
         for i in 1:quantity_per_size
