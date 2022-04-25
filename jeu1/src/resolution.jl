@@ -76,7 +76,7 @@ function cplexSolve(limits::Array{Int64,2})
 
 
     if JuMP.primal_status(m) == JuMP.MathOptInterface.FEASIBLE_POINT
-        vtour = Array{Int64}(JuMP.value.(tour))
+        vtour = Array{Int64}(floor.(JuMP.value.(tour)))
         displaySolution(limits, vtour)
     end
     # Return:
