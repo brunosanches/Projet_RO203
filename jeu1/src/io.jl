@@ -25,27 +25,27 @@ function readInputFile(inputFile::String)
 end
 
 function displayGrid(limits::Array{Int64, 2})
-    n, m = size(A)
-    digits = Int64(ceil(log10(size(A,2))))
-    print(lpad(" |", digits+2, " "))
+    n, m = size(limits)
+    digits = Int64(ceil(log10(m) + 1))
+    print(lpad("|", digits+3, " "))
     for j in 1:m
         print(lpad(limits[1, j], digits+1, " "))
     end
     println(" |")
-    println(repeat("-", m*2 + 5 + 2*digits))
+    println(repeat("-", m*(1 + digits) + 6 + 2*digits))
 
-    for i in 1:n
-        print(lpad(limits[4, i], digits, " "))
+    for i in 1:m
+        print(lpad(limits[4, i], digits+1, " "))
         print(" |")
         for j in 1:m
             print(lpad(" ", digits+1, " "))
         end
-        print(" | ")
-        println(lpad(limits[2,i], digits, " "))
+        print(" |")
+        println(lpad(limits[2,i], digits+1, " "))
     end
 
-    println(repeat("-", m*2 + 5 + 2*digits))
-    print(lpad(" |", digits+2, " "))
+    println(repeat("-", m*(1 + digits) + 6 + 2*digits))
+    print(lpad("|", digits+3, " "))
     for j in 1:m
         print(lpad(limits[3, j], digits+1, " "))
     end
@@ -53,32 +53,65 @@ function displayGrid(limits::Array{Int64, 2})
 end
 
 function displaySolution(limits::Array{Int64, 2}, solution::Array{Int64, 2})
-    n, m = size(A)
-    digits = Int64(ceil(log10(size(A,2))))
-    print(lpad(" |", digits+2, " "))
+    n, m = size(limits)
+    digits = Int64(ceil(log10(m)+1))
+    print(lpad("|", digits+3, " "))
     for j in 1:m
         print(lpad(limits[1, j], digits+1, " "))
     end
     println(" |")
-    println(repeat("-", m*2 + 5 + 2*digits))
+    println(repeat("-", m*(1 + digits) + 6 + 2*digits))
 
     for i in 1:m
-        print(lpad(limits[4, i], digits, " "))
+        print(lpad(limits[4, i], digits+1, " "))
         print(" |")
         for j in 1:m
             print(lpad(solution[i,j], digits+1, " "))
         end
-        print(" | ")
-        println(lpad(limits[2,i], digits, " "))
+        print(" |")
+        println(lpad(limits[2,i], digits+1, " "))
     end
 
-    println(repeat("-", m*2 + 5 + 2*digits))
-    print(lpad(" |", digits+2, " "))
+    println(repeat("-", m*(1 + digits) + 6 + 2*digits))
+    print(lpad("|", digits+3, " "))
     for j in 1:m
         print(lpad(limits[3, j], digits+1, " "))
     end
     println(" |")
 end
+
+"""
+Write a solution in an output stream
+
+Arguments
+- fout: the output stream (usually an output file)
+- t: 2-dimensional array of size n*n
+"""
+function writeSolution(fout::IOStream, t::Array{Int64, 2})
+    
+    println(fout, "t = [")
+    n = size(t, 1)
+    
+    for l in 1:n
+
+        print(fout, "[ ")
+        
+        for c in 1:n
+            print(fout, string(t[l, c]) * " ")
+        end 
+
+        endLine = "]"
+
+        if l != n
+            endLine *= ";"
+        end
+
+        println(fout, endLine)
+    end
+
+    println(fout, "]")
+end 
+
 """
 Create a pdf file which contains a performance diagram associated to the results of the ../res folder
 Display one curve for each subfolder of the ../res folder.
