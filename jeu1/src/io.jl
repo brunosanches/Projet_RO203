@@ -26,7 +26,7 @@ end
 
 function displayGrid(limits::Array{Int64, 2})
     n, m = size(limits)
-    digits = Int64(ceil(log10(m) + 1))
+    digits = Int64(floor(log10(m)) + 1)
     print(lpad("|", digits+3, " "))
     for j in 1:m
         print(lpad(limits[1, j], digits+1, " "))
@@ -54,7 +54,7 @@ end
 
 function displaySolution(limits::Array{Int64, 2}, solution::Array{Int64, 2})
     n, m = size(limits)
-    digits = Int64(ceil(log10(m)+1))
+    digits = Int64(floor(log10(m))+1)
     print(lpad("|", digits+3, " "))
     for j in 1:m
         print(lpad(limits[1, j], digits+1, " "))

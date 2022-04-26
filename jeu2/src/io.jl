@@ -19,13 +19,41 @@ function readInputFile(inputFile::String)
     close(datafile)
 
     # For each line of the input file
-    for line in data
+    parse_inverted(x, type) = parse(type, x)
+    data = map(x -> parse_inverted.(x, Int64), split.(data, ","))
+    return permutedims(hcat(data...))
+end
 
-        # TODO
-        println("In file io.jl, in method readInputFile(), TODO: read a line of the input file")
+function displayGrid(grid::Array{Int64, 2})
+    n = size(grid,1)
+    digits = Int64(floor(log10(n)) + 1)
 
+    println(repeat("-", 2*n*digits+3))
+    for i in 1:n
+        print("| ")
+        for j in 1:n
+            print(string(grid[i,j])*" ")
+        end
+        println("|")
     end
 
+    println(repeat("-", 2*n*digits+3))
+end
+
+function displaySolution(grid::Array{Int64, 2}, masked::Array{Bool, 2})
+    n = size(grid,1)
+    digits = Int64(floor(log10(n)) + 1)
+
+    println(repeat("-", 2*n*digits+3))
+    for i in 1:n
+        print("| ")
+        for j in 1:n
+            print((masked[i,j] == true ? "■" : string(grid[i,j]))*" ")
+        end
+        println("|")
+    end
+
+    println(repeat("-", 2*n*digits+3))
 end
 
 
