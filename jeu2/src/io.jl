@@ -26,7 +26,7 @@ end
 
 function displayGrid(grid::Array{Int64, 2})
     n = size(grid,1)
-    digits = Int64(floor(log10(n)) + 1)
+    digits = ndigits(n)
 
     println(repeat("-", 2*n*digits+3))
     for i in 1:n
@@ -40,17 +40,17 @@ function displayGrid(grid::Array{Int64, 2})
     println(repeat("-", 2*n*digits+3))
 end
 
-function displaySolution(grid::Array{Int64, 2}, masked::Array{Bool, 2})
+function displaySolution(grid::Array{Int64, 2}, masked::Array{Int64, 2})
     n = size(grid,1)
-    digits = Int64(floor(log10(n)) + 1)
+    digits = ndigits(n)
 
     println(repeat("-", 2*n*digits+3))
     for i in 1:n
-        print("| ")
+        print("|")
         for j in 1:n
-            print((masked[i,j] == true ? "■" : string(grid[i,j]))*" ")
+            print(lpad((masked[i,j] == 1 ? "■ " : string(grid[i,j])), digits+1, " "))
         end
-        println("|")
+        println(" |")
     end
 
     println(repeat("-", 2*n*digits+3))
