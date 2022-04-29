@@ -1,8 +1,6 @@
 # This file contains methods to solve an instance (heuristically or with CPLEX)
 using CPLEX
 
-include("generation.jl")
-
 TOL = 0.00001
 
 """
@@ -48,8 +46,6 @@ function cplexSolve(grid::Array{Int64,2})
     # Create the model
     m = Model(with_optimizer(CPLEX.Optimizer))
 
-    # TODO
-    println("In file resolution.jl, in method cplexSolve(), TODO: fix input and output, define the model")
     n = size(grid,1)
     vX = zeros(n, n)
 
