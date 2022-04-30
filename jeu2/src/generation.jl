@@ -113,8 +113,8 @@ function generateDataSet()
 
     # TODO
     println("In file generation.jl, in method generateDataSet(), TODO: generate an instance")
-    sizes = [4, 6, 8, 10, 12, 14]
-    densities = [0.05, 0.1, 0.2, 0.3]
+    sizes = [4, 6, 8, 10, 12, 14, 16]
+    densities = [0.05, 0.1, 0.2, 0.3, 0.32]
     for n in sizes
         size_instances = zeros(Int64, length(densities), n, n)
         for i in 1:length(densities)

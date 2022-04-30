@@ -56,6 +56,30 @@ function displaySolution(grid::Array{Int64, 2}, masked::Array{Int64, 2})
     println(repeat("-", 2*n*digits+3))
 end
 
+function writeSolution(fout::IOStream, solution::Array{Int64, 2})
+    
+    println(fout, "t = [")
+    n = size(solution, 1)
+    
+    for l in 1:n
+
+        print(fout, "[ ")
+        
+        for c in 1:n
+            print(fout, string(solution[l, c]) * " ")
+        end 
+
+        endLine = "]"
+
+        if l != n
+            endLine *= ";"
+        end
+
+        println(fout, endLine)
+    end
+
+    println(fout, "]")
+end 
 
 """
 Create a pdf file which contains a performance diagram associated to the results of the ../res folder
