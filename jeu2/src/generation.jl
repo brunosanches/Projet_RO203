@@ -113,6 +113,38 @@ function generateDataSet()
 
     # TODO
     println("In file generation.jl, in method generateDataSet(), TODO: generate an instance")
+    sizes = [4, 6, 8, 10, 12, 14]
+    densities = [0.05, 0.1, 0.2, 0.3]
+    for n in sizes
+        size_instances = zeros(Int64, length(densities), n, n)
+        for i in 1:length(densities)
+            filepath = "../data/instance_t" * string(n) * "_d" * string(densities[i]) * ".txt"
+            if !isfile(filepath)
+                solveable, instance = generateInstance(n, densities[i])
+                while any([instance == x for x in size_instances])
+                    solveable, instance = generateInstance(n, densities[i])
+                    if solveable == false
+                        break
+                    end
+                end
+                if solveable == false
+                    println("Size: " * string(n) * " density: " * string(densities[i]) * " could not be generated")
+                    continue
+                end
+                size_instances[i, :, :] = instance
+
+                file = open(filepath, "w")
+                for lin in 1:n
+                    for col in 1:(n-1)
+                        print(file, string(instance[lin,col]) * ",")
+                    end
+                    println(file, instance[lin,n])
+                end
+                close(file)
+            end
+
+        end
+    end
     
 end
 
