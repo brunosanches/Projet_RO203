@@ -106,14 +106,101 @@ function cplexSolve(grid::Array{Int64,2})
     
 end
 
+function getRepeated(grid::Array{Int64, 2}, masks::Array{Int64, 2})
+    n = size(grid, 1)
+    E = zeros(Int64, n, n)
+    for i in 1:n
+        for j in 1:n
+            if masks[i, j] == 0
+                if any([masks[i,j2] == 0 && grid[i,j] == grid[i,j2] for j2 in 1:n if j2 != j]) ||
+                    any([masks[i2,j] == 0 && grid[i,j] == grid[i2,j] for i2 in 1:n if i2 != i])
+                    E[i,j] = 1
+                end
+            end
+        end
+    end
+    return findall(x -> x == 1, E)
+end
+
+function checkSolution(values::Array{Int64, 3}, mask::Array{Int64, 2})
+    n = size(values, 1)
+
+    if !all([sum(values[i, j, k]*(1-mask[i, j]) for j in 1:n) <= 1 for i in 1:n for k in 1:n]) ||
+        !all([sum(values[i, j, k]*(1-mask[i, j]) for i in 1:n) <= 1 for j in 1:n for k in 1:n])
+        return false
+    end
+
+    if !all([mask[i,j] + mask[i-1, j] <= 1 for i in 2:n for j in 1:n]) ||
+        !all([mask[i,j] + mask[i+1,j] <= 1 for i in 1:(n-1) for j in 1:n]) ||
+        !all([mask[i,j] + mask[i, j-1] <= 1 for i in 1:n for j in 2:n]) ||
+        !all([mask[i,j] + mask[i,j+1] <= 1 for i in 1:n for j in 1:(n-1)])
+        return false
+    end
+
+    return checkConnectivity(mask)
+end
+
 """
 Heuristically solve an instance
 """
 function heuristicSolve(grid::Array{Int64, 2})
+    n = size(grid, 1)
+    #Initialize solution array
+    solution = zeros(Int64, n, n)
 
-    # TODO
-    println("In file resolution.jl, in method heuristicSolve(), TODO: fix input and output, define the model")
-    
+    # get value matrix to test constraints
+    values = zeros(Int64, n, n, n)
+    for i in 1:n
+        for j in 1:n
+            values[i,j,grid[i,j]] = 1
+        end
+    end
+
+    function recursiveSolution(values::Array{Int64, 3}, mask::Array{Int64, 2}, 
+                                positions::Array{CartesianIndex{2}}, i::Int64)
+        n = size(values,1)
+        if checkSolution(values, mask) == true
+            return true
+        end
+        if i > length(positions)
+            return false
+        end
+
+        pos = positions[i]
+
+        # Check Constraintes 3, 4 et 5
+        non_adjacent = true
+        if (pos[1] != 1 && mask[pos + CartesianIndex(-1, 0)] == 1) ||
+            (pos[1] != n && mask[pos + CartesianIndex(1, 0)] == 1) ||
+            (pos[2] != 1 && mask[pos + CartesianIndex(0, -1)] == 1) ||
+            (pos[2] != n && mask[pos + CartesianIndex(0, 1)] == 1)
+            
+            non_adjacent = false
+        end
+
+        if non_adjacent == true 
+            k = sum(x*values[pos[1], pos[2], x] for x in 1:n)
+            # Check constraints 1 et 2
+            if sum(values[pos[1], j, k]*(1-mask[pos[1], j]) for j in 1:n) == 1 &&
+               sum(values[i, pos[2], k]*(1-mask[i, pos[2]]) for i in 1:n) == 1
+                # Does not need to mask this position
+                # Pass to the next
+                return recursiveSolution(values, mask, positions, i+1)
+            else
+                mask[pos] = 1
+                if checkConnectivity(mask) && recursiveSolution(values, mask, positions, i+1) == true
+                    return true
+                end
+                mask[pos] = 0
+            end
+        end
+        
+        return recursiveSolution(values, mask, positions, i+1)
+    end
+
+    isSolution = recursiveSolution(values, solution, getRepeated(grid, solution), 1)
+
+    return isSolution, solution
 end 
 
 """
