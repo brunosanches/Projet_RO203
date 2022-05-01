@@ -216,8 +216,8 @@ function solveDataSet()
     resFolder = "../res/"
 
     # Array which contains the name of the resolution methods
-    resolutionMethod = ["cplex"]
-    #resolutionMethod = ["cplex", "heuristique"]
+    #resolutionMethod = ["cplex"]
+    resolutionMethod = ["cplex", "heuristique"]
 
     # Array which contains the result folder of each resolution method
     resolutionFolder = resFolder .* resolutionMethod
@@ -238,9 +238,6 @@ function solveDataSet()
         
         println("-- Resolution of ", file)
         instance = readInputFile(dataFolder * file)
-
-        # TODO
-        println("In file resolution.jl, in method solveDataSet(), TODO: read value returned by readInputFile()")
         
         # For each resolution method
         for methodId in 1:size(resolutionMethod, 1)
@@ -278,10 +275,13 @@ function solveDataSet()
                     while !isOptimal && resolutionTime < 100
                         
                         # Solve it and get the results
-                        isOptimal, resolutionTime, solution = heuristicSolve(instance)
+                        isSolved, solution = heuristicSolve(instance)
 
                         # Stop the chronometer
                         resolutionTime = time() - startingTime
+
+                        # Check against cplex solution
+                        isOptimal = isSolved
                         
                     end
 
