@@ -24,9 +24,9 @@ function cplexSolve(limits::Array{Int64,2})
     @variable(m, tour[1:n, 1:n] >= 0, Int) # valeur d'hauteur de la tour
 
     #Defining contraints
-    @constraint(m, [i in 1:n, j in 1:n], sum(x[i,j,k] for k in 1:n)==1) # 1 valeur par tour
-    @constraint(m, [i in 1:n, k in 1:n], sum(x[i,j,k] for j in 1:n)==1) # 1 valeur par ligne
-    @constraint(m, [j in 1:n, k in 1:n], sum(x[i,j,k] for i in 1:n)==1) # 1 valeur par colonne
+    @constraint(m, [i in 1:n, j in 1:n], sum(x[i,j,h] for h in 1:n)==1) # 1 valeur par tour
+    @constraint(m, [i in 1:n, h in 1:n], sum(x[i,j,h] for j in 1:n)==1) # 1 valeur par ligne
+    @constraint(m, [j in 1:n, h in 1:n], sum(x[i,j,h] for i in 1:n)==1) # 1 valeur par colonne
 
     ## Constraintes de visualisation (combien de tours je peux voir)
     @constraint(m, [k in [1,3], j in 1:n], sum(v[i,j,k] for i in 1:n)==limits[k,j])
@@ -42,7 +42,7 @@ function cplexSolve(limits::Array{Int64,2})
     @constraint(m, [i in 1:n, j in 1:n, k in 1:4], v[i,j,k] >= x[i,j,n])
 
     ## Prendre le valeur de la tour
-    @constraint(m, [i in 1:n, j in 1:n], sum(k*x[i, j, k] for k in 1:n) == tour[i,j])
+    @constraint(m, [i in 1:n, j in 1:n], sum(h*x[i, j, h] for h in 1:n) == tour[i,j])
 
     ## Impose les bonnes valeurs pour les variables g_l et g_c
     @constraint(m, [i in 1:n, j in 1:n, j2 in 1:n], tour[i, j2] - tour[i,j] <= (1-g_l[i,j,j2])*n)
