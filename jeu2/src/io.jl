@@ -28,23 +28,23 @@ function displayGrid(grid::Array{Int64, 2})
     n = size(grid,1)
     digits = ndigits(n)
 
-    println(repeat("-", 2*n*digits+3))
+    println(repeat("-", n*(digits+1)+3))
     for i in 1:n
         print("| ")
         for j in 1:n
-            print(string(grid[i,j])*" ")
+            print(lpad(string(grid[i,j])*" ", digits+1, " "))
         end
         println("|")
     end
 
-    println(repeat("-", 2*n*digits+3))
+    println(repeat("-", n*(digits+1)+3))
 end
 
 function displaySolution(grid::Array{Int64, 2}, masked::Array{Int64, 2})
     n = size(grid,1)
     digits = ndigits(n)
 
-    println(repeat("-", 2*n*digits+3))
+    println(repeat("-", n*(digits+1)+3))
     for i in 1:n
         print("|")
         for j in 1:n
@@ -53,7 +53,7 @@ function displaySolution(grid::Array{Int64, 2}, masked::Array{Int64, 2})
         println(" |")
     end
 
-    println(repeat("-", 2*n*digits+3))
+    println(repeat("-", n*(digits+1)+3))
 end
 
 function writeSolution(fout::IOStream, solution::Array{Int64, 2})
