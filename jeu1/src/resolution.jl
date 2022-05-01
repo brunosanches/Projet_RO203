@@ -86,14 +86,294 @@ function cplexSolve(limits::Array{Int64,2})
     
 end
 
+function insertValue!(possibilities::Array{Int64, 3}, grid::Array{Int64, 2}, 
+                                val::Int64, i::Int64, j::Int64)
+    n = size(possibilities,1)
+    possibilities[i, j, 1:n .!= val] .= 0
+    grid[i,j] = val
+    possibilities[i, 1:n .!= j, val] .= 0
+    possibilities[1:n .!= i, j, val] .= 0
+end
+
+function insertValue(possibilities::Array{Int64, 3}, grid::Array{Int64, 2},
+                        val::Int64, i::Int64, j::Int64)
+    n = size(possibilities, 1)
+    newPossibilities = deepcopy(possibilities)
+    newPossibilities[i, j, 1:n .!= val] .= 0
+    grid[i,j] = val
+    newPossibilities[i, 1:n .!= j, val] .= 0
+    newPossibilities[1:n .!= i, j, val] .= 0
+
+    return newPossibilities
+end
+
+function findUniqueCandidate(possibilities::Array{Int64, 3}, grid::Array{Int64})
+    n = size(possibilities, 1)
+    # Check if on the line there is one value that is present in only one place
+    display(possibilities)
+    println("")
+    for i in 1:n
+        if any(grid[i,j] == 0 for j in 1:n)
+            v = [sum(possibilities[i,j,k] for j in 1:n if grid[i,j] == 0) == 1 for k in 1:n]
+            if any(v)
+                k = findfirst(x-> x, v)
+                j = findfirst(x->possibilities[i,x,k] ==1 && grid[i,x] == 0, 1:n)
+                println((i,j,k))
+                return true, [k], (i,j)
+            end
+        end
+    end
+    # Check if on the column there is one value that is present in only one place
+    for j in 1:n
+        if any(grid[i,j] == 0 for i in 1:n)
+            v = [sum(possibilities[i,j,k] for i in 1:n if grid[i,j] == 0) == 1 for k in 1:n]
+            if any(v)
+                k = findfirst(x-> x, v)
+                i = findfirst(x->possibilities[x,j,k] ==1 && grid[x,j] == 0, 1:n)
+                return true, [k], (i,j)
+            end
+        end
+    end
+
+    return false, [], (0,0)
+
+end
+
+function findLeastPossibilities(possibilities::Array{Int64, 3}, grid::Array{Int64, 2})
+    n = size(possibilities, 1)
+    minPossisibilities = n+1
+    pos = (0, 0)
+    for i in 1:n
+        for j in 1:n
+            if sum(possibilities[i,j,k] for k in 1:n) < minPossisibilities &&
+                grid[i,j] == 0
+                minPossisibilities = sum(possibilities[i,j,k] for k in 1:n)
+                pos = (i, j)
+            end
+        end
+    end
+    return minPossisibilities, pos
+end
+
+function findBestPosition(possibilities::Array{Int64, 3}, grid::Array{Int64, 2})
+    n = size(possibilities, 1)
+    vals = []
+    found, vals, position = findUniqueCandidate(possibilities, grid)
+    if found
+        return vals, position
+    end
+
+    nPossibilities, position = findLeastPossibilities(possibilities, grid)
+    if position != (0, 0)
+        vals = [k*possibilities[position..., k] for k in 1:n if possibilities[position..., k] != 0]
+    end
+
+    return vals, position
+end
+
+function checkPerspectives(grid::Array{Int64, 2}, limits::Array{Int64, 2}, lin::Int64, col::Int64)
+    n = size(grid, 1)
+
+    if col != 0
+        # Check first perspective
+        countV = 0
+        maxH = 0
+        for i in 1:n
+            if grid[i,col] > maxH
+                countV+=1
+                maxH = grid[i,col]
+            end
+        end
+        if countV != limits[1, col]
+            return false
+        end
+
+        # Check second perspective
+        countV = 0
+        maxH = 0
+        for i in n:-1:1
+            if grid[i,col] > maxH
+                countV+=1
+                maxH = grid[i,col]
+            end
+        end
+        if countV != limits[3, col]
+            return false
+        end
+    end
+
+    if lin != 0
+        # Check second perspective
+        countV = 0
+        maxH = 0
+        for j in n:-1:1
+            if grid[lin,j] > maxH
+                countV+=1
+                maxH = grid[lin,j]
+            end
+        end
+        if countV != limits[2, lin]
+            return false
+        end
+
+        # Check fourth perspective
+        countV = 0
+        maxH = 0
+        for j in 1:n
+            if grid[lin,j] > maxH
+                countV+=1
+                maxH = grid[lin,j]
+            end
+        end
+        if countV != limits[4, lin]
+            return false
+        end
+    end
+    return true
+end
+
+
+function checkSolution(grid::Array{Int64, 2}, limits::Array{Int64, 2})
+    n = size(grid, 1)
+
+    # Check first perspective
+    for j in 1:n
+        if checkPerspectives(grid, limits, 0, j) == false
+            return false
+        end
+    end
+
+    # Check second perspective
+    for i in 1:n
+        if checkPerspectives(grid, limits, i, 0) == false
+            return false
+        end
+    end
+
+    return true
+end
+
 """
 Heuristically solve an instance
 """
 function heuristicSolve(limits::Array{Int64,2})
 
-    # TODO
-    println("In file resolution.jl, in method heuristicSolve(), TODO: fix input and output, define the model")
-    
+    n = size(limits,2)
+
+    #Initialize solution and possible values arrays
+    possibilities = ones(Int64, n, n, n)
+    solution = zeros(Int64, n, n)
+
+    # trivial-cases, limit[1,j] = 1 or == n
+
+    # First perspective
+    for j in 1:n
+        if limits[1,j] == 1
+            insertValue!(possibilities, solution, n, 1, j)
+        elseif limits[1,j] == n
+            for i in 1:n
+                insertValue!(possibilities, solution, i, i, j)
+            end
+            possibilities[1, j, n] = 0
+        else
+            possibilities[1, j, n] = 0
+        end
+    end
+
+    # Second Perspective
+    for i in 1:n
+        if limits[2, i] == 1
+            insertValue!(possibilities, solution, n, i, n)
+        elseif limits[2, i] == n
+            for j in 1:n
+                val = n - j + 1
+                insertValue!(possibilities, solution, val, i, j)
+            end
+            possibilities[i, n, n] = 0
+        else
+            possibilities[i, n, n] = 0
+        end
+    end
+
+    # Third perspective
+    for j in 1:n
+        if limits[3, j] == 1
+            insertValue!(possibilities, solution, n, n, j)
+        elseif limits[3, j] == n
+            for i in 1:n
+                val = n - i + 1
+                insertValue!(possibilities, solution, val, i, j)
+            end
+            possibilities[n, j, n] = 0
+        else
+            possibilities[n, j, n] = 0
+        end
+    end
+
+    # Fourth perspective
+    for i in 1:n
+        if limits[4, i] == 1
+            insertValue!(possibilities, solution, n, i, 1)
+        elseif limits[4, i] == n
+            for j in 1:n
+                insertValue!(possibilities, solution, j, i, j)
+            end
+            possibilities[i, 1, n] = 0
+        else
+            possibilities[i, 1, n] = 0
+        end
+    end
+
+    function recursiveSolution(possibilities, grid, limits)
+        vals, position = findBestPosition(possibilities, grid)
+        if length(vals) == 0
+            return false
+        elseif position == (0, 0)
+            return checkSolution(grid, limits)
+        end
+
+        # If there is only one possibility left
+        if length(vals) == 1
+            val = vals[1]
+            newPossibilities = insertValue(possibilities, grid, val, position...)
+
+            if all(grid[position[1], :] .!= 0) && checkPerspectives(grid, limits, position[1], 0) == false ||
+                all(grid[:, position[2]] .!= 0) && checkPerspectives(grid, limits, 0, position[2]) == false
+                grid[position...] = 0
+                return false
+            end
+
+            if recursiveSolution(newPossibilities, grid, limits) == true
+                return true
+            else
+                grid[position...] = 0
+                return false
+            end
+        else
+            for val in vals
+                newPossibilities = insertValue(possibilities, grid, val, position...)
+
+                if all(grid[position[1], :] .!= 0) && checkPerspectives(grid, limits, position[1], 0) == false ||
+                    all(grid[:, position[2]] .!= 0) && checkPerspectives(grid, limits, 0, position[2]) == false
+                    grid[position...] = 0
+                    continue
+                end
+
+                if recursiveSolution(newPossibilities, grid, limits) == true
+                    return true
+                else
+                    grid[position...] = 0
+                end
+            end
+            return false
+        end
+
+        return false
+    end
+
+    isSolution = recursiveSolution(possibilities, solution, limits)
+
+    return isSolution, solution    
 end 
 
 """
@@ -109,8 +389,8 @@ function solveDataSet()
     resFolder = "../res/"
 
     # Array which contains the name of the resolution methods
-    resolutionMethod = ["cplex"]
-    #resolutionMethod = ["cplex", "heuristique"]
+    #resolutionMethod = ["cplex"]
+    resolutionMethod = ["cplex", "heuristique"]
 
     # Array which contains the result folder of each resolution method
     resolutionFolder = resFolder .* resolutionMethod
@@ -168,7 +448,7 @@ function solveDataSet()
                     while !isOptimal && resolutionTime < 100
                         
                         # Solve it and get the results
-                        isOptimal, resolutionTime, solution = heuristicSolve(instance)
+                        isOptimal, solution = heuristicSolve(instance)
 
                         # Stop the chronometer
                         resolutionTime = time() - startingTime
@@ -197,3 +477,6 @@ function solveDataSet()
         end         
     end 
 end
+
+A = readInputFile("/home/bruno/Projet_RO203/jeu1/data/instance_t3_i5.txt")
+heuristicSolve(A)
