@@ -5,5 +5,5 @@ t = [
 [ 5 4 1 2 3 ];
 [ 2 3 5 1 4 ]
 ]
-solveTime = 0.028802871704101562
+solveTime = 1.843703031539917
 isOptimal = true

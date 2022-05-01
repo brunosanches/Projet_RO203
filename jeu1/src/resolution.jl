@@ -110,15 +110,12 @@ end
 function findUniqueCandidate(possibilities::Array{Int64, 3}, grid::Array{Int64})
     n = size(possibilities, 1)
     # Check if on the line there is one value that is present in only one place
-    display(possibilities)
-    println("")
     for i in 1:n
         if any(grid[i,j] == 0 for j in 1:n)
             v = [sum(possibilities[i,j,k] for j in 1:n if grid[i,j] == 0) == 1 for k in 1:n]
             if any(v)
                 k = findfirst(x-> x, v)
                 j = findfirst(x->possibilities[i,x,k] ==1 && grid[i,x] == 0, 1:n)
-                println((i,j,k))
                 return true, [k], (i,j)
             end
         end
@@ -326,10 +323,10 @@ function heuristicSolve(limits::Array{Int64,2})
 
     function recursiveSolution(possibilities, grid, limits)
         vals, position = findBestPosition(possibilities, grid)
-        if length(vals) == 0
-            return false
-        elseif position == (0, 0)
+        if position == (0,0)
             return checkSolution(grid, limits)
+        elseif length(vals) == 0
+            return false
         end
 
         # If there is only one possibility left
@@ -478,5 +475,5 @@ function solveDataSet()
     end 
 end
 
-A = readInputFile("/home/bruno/Projet_RO203/jeu1/data/instance_t3_i5.txt")
-heuristicSolve(A)
+# A = readInputFile("/home/bruno/Projet_RO203/jeu1/data/instance_t3_i5.txt")
+# heuristicSolve(A)
