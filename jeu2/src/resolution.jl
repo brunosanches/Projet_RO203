@@ -73,7 +73,7 @@ function cplexSolve(grid::Array{Int64,2})
     @constraint(m, [i in 1:n, j in 2:n], x[i,j] + x[i, j-1] <= 1)
     @constraint(m, [i in 1:n, j in 1:(n-1)], x[i,j] + x[i, j+1] <= 1)
 
-    @objective(m, 1)
+    @objective(m, Max, 1)
     # Start a chronometer
     start = time()
 
